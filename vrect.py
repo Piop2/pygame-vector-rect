@@ -1,5 +1,5 @@
-from typing import Optional, Sequence, Type
-from math import sin, cos, atan2, radians, dist, degrees, tan
+from typing import Optional, Sequence, Type, Callable
+from math import sin, cos, atan2, radians, dist, degrees
 
 import pygame.draw
 from pygame import Rect, FRect, Vector2, Surface
@@ -70,7 +70,7 @@ class VRect:
 
     @a.setter
     def a(self, new: float) -> None:
-        self._angle = new
+        self._angle = new % 360
 
     @property
     def angle(self) -> float:
@@ -78,7 +78,7 @@ class VRect:
 
     @angle.setter
     def angle(self, new: float) -> None:
-        self._angle = new
+        self._angle = new % 360
 
     @property
     def points(self) -> tuple[Vector2, Vector2, Vector2, Vector2]:
@@ -136,7 +136,7 @@ class VRect:
         self._height += height if height is not None else 0
         self._angle += angle if angle is not None else 0
 
-    def _get_rect(self, *points: Vector2) -> Rect:
+    def _get_rect_by_points(self, *points: Vector2) -> Rect:
         return Rect(
             (x := min(point.x for point in points)),
             (y := min(point.y for point in points)),
@@ -144,35 +144,102 @@ class VRect:
             max(point.y for point in points) - y,
         )
 
+    def _get_linears(
+        self,
+    ) -> tuple[
+        Callable[[float], float],
+        Callable[[float], float],
+        Callable[[float], float],
+        Callable[[float], float],
+    ]:
+        ...
+
     def collidepoint(self, x: float, y: float) -> bool:
         if self.angle % 90 == 0:
-            return self._get_rect(*self.points).collidepoint(x, y)
+            return self._get_rect_by_points(*self.points).collidepoint(x, y)
 
         points = sorted(self.points, key=lambda p: p.y)
-        for i in (1, 2):
-            if (
-                self._get_rect(points[0], points[i]).collidepoint(x, y)
-                and tan(radians(points[0].angle_to(points[i]))) * (x - points[i].x)
-                + points[i].y
-                >= y
-            ):
-                return True
-            if (
-                self._get_rect(points[3], points[i]).collidepoint(x, y)
-                and tan(radians(points[3].angle_to(points[i]))) * (x - points[i].x)
-                + points[i].y
-                <= y
-            ):
-                return True
-        return False
+        return (
+            (points[0].y - points[1].y)
+            / (points[0].x - points[1].x)
+            * (x - points[0].x)
+            + points[0].y
+            <= y
+            and (points[0].y - points[2].y)
+            / (points[0].x - points[2].x)
+            * (x - points[0].x)
+            + points[0].y
+            <= y
+            and (points[3].y - points[1].y)
+            / (points[3].x - points[1].x)
+            * (x - points[3].x)
+            + points[3].y
+            >= y
+            and (points[3].y - points[2].y)
+            / (points[3].x - points[2].x)
+            * (x - points[3].x)
+            + points[3].y
+            >= y
+        )
 
     def colliderect(self, rect: Type["VRect"] | Rect | FRect) -> bool:
         ...
 
     def draw(
-        self, surface: Surface, color: int | str | Sequence[int], width: int = 0
+        self,
+        surface: Surface,
+        color: int | str | Sequence[int],
+        width: int = 0,
+        debug: bool = False,
     ) -> None:
         pygame.draw.polygon(surface, color, self.points, width)
+
+        if debug:
+            points = sorted(self.points, key=lambda p: p.y)
+            surf_w, surf_h = surface.get_size()
+            if self.a % 90 == 0:
+                pygame.draw.line(
+                    surface, "blue", (0, points[0].y), (surf_w, points[0].y)
+                )
+                pygame.draw.line(
+                    surface, "blue", (0, points[3].y), (surf_w, points[3].y)
+                )
+                pygame.draw.line(
+                    surface, "blue", (points[0].x, 0), (points[0].x, surf_h)
+                )
+                pygame.draw.line(
+                    surface, "blue", (points[3].x, 0), (points[3].x, surf_h)
+                )
+                return
+
+            line1 = (
+                lambda x: (points[0].y - points[1].y)
+                / (points[0].x - points[1].x)
+                * (x - points[0].x)
+                + points[0].y
+            )
+            line2 = (
+                lambda x: (points[0].y - points[2].y)
+                / (points[0].x - points[2].x)
+                * (x - points[0].x)
+                + points[0].y
+            )
+            line3 = (
+                lambda x: (points[3].y - points[1].y)
+                / (points[3].x - points[1].x)
+                * (x - points[3].x)
+                + points[3].y
+            )
+            line4 = (
+                lambda x: (points[3].y - points[2].y)
+                / (points[3].x - points[2].x)
+                * (x - points[3].x)
+                + points[3].y
+            )
+            pygame.draw.aaline(surface, "blue", (0, line1(0)), (surf_w, line1(surf_w)))
+            pygame.draw.aaline(surface, "blue", (0, line2(0)), (surf_w, line2(surf_w)))
+            pygame.draw.aaline(surface, "blue", (0, line3(0)), (surf_w, line3(surf_w)))
+            pygame.draw.aaline(surface, "blue", (0, line4(0)), (surf_w, line4(surf_w)))
 
 
 if __name__ == "__main__":
