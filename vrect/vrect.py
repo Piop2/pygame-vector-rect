@@ -13,11 +13,14 @@ _RectLike = tuple[float, float, float, float]
 _VRectLike = tuple[float, float, float, float, float]
 RectValue = _RectLike | _VRectLike
 
+
 def _cos(degree: float) -> float:
     return cos(radians(degree))
 
+
 def _sin(degree: float) -> float:
     return sin(radians(degree))
+
 
 class VRect:
     """pygame Vector Rect"""
@@ -196,7 +199,12 @@ class VRect:
 
     def colliderect(self, rect: Type["VRect"] | Rect | FRect | RectValue) -> bool:
         if isinstance(rect, Rect | FRect):
-            for x, y in (rect.topleft, rect.topright, rect.bottomleft, rect.bottomright):
+            for x, y in (
+                rect.topleft,
+                rect.topright,
+                rect.bottomleft,
+                rect.bottomright,
+            ):
                 if self.collidepoint(x, y):
                     return True
             return False
@@ -205,7 +213,7 @@ class VRect:
         elif isinstance(rect, _VRectLike):
             pass
         # elif isinstance(rect, type["VRect"]):
-            
+
         else:
             raise TypeError("Invalid rect, 4 or 5 fields must be numeric")
 
