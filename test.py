@@ -1,6 +1,6 @@
 import pygame
 
-from ..vrect import VRect
+from vrect import VRect
 
 pygame.init()
 surf = pygame.display.set_mode((500, 500))
