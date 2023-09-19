@@ -246,9 +246,3 @@ class VRect:
                 (self.x + self.h * _cos(self.a), self.y + self.h * _sin(self.a)),
                 1,
             )
-
-
-if __name__ == "__main__":
-    vrect1 = VRect(1, 1, 1, 1, 1)
-    vrect2 = VRect(1, 1, 1, 1, 1)
-    vrect1.colliderect((1, 1, 1, 1))
