@@ -1,17 +1,13 @@
-from typing import Optional, Sequence, Type, Callable
+from __future__ import annotations
+from typing import Optional, Callable, Sequence
 from math import sin, cos, atan2, radians, dist, degrees
 
 import pygame.draw
 from pygame import Rect, FRect, Vector2, Surface
 
 
-_RGB = tuple[float, float, float]
-_RGBA = tuple[float, float, float, float]
-ColorValue = _RGB | _RGBA | str
-
-_RectLike = tuple[float, float, float, float]
-_VRectLike = tuple[float, float, float, float, float]
-RectValue = _RectLike | _VRectLike
+ColorValue = Sequence[float] | str
+RectValue = Sequence[float]
 
 
 def _cos(degree: float) -> float:
@@ -137,7 +133,7 @@ class VRect:
         self._angle = angle % 360
 
     def __repr__(self) -> str:
-        return f"<{self.__class__._floatame__} x={self.x} y={self.y} width={self.width} height={self.height} angle={self.angle}>"
+        return f"<{self.__class__.__name__} x={self.x} y={self.y} width={self.width} height={self.height} angle={self.angle}>"
 
     def update(
         self,
@@ -197,23 +193,32 @@ class VRect:
         line1, line2, line3, line4 = self._get_linears()
         return line1(x) <= y and line2(x) <= y and line3(x) >= y and line4(x) >= y
 
-    def colliderect(self, rect: Type["VRect"] | Rect | FRect | RectValue) -> bool:
-        if isinstance(rect, Rect | FRect):
-            for x, y in (
-                rect.topleft,
-                rect.topright,
-                rect.bottomleft,
-                rect.bottomright,
-            ):
-                if self.collidepoint(x, y):
-                    return True
-            return False
-        elif isinstance(rect, _RectLike):
-            pass
-        elif isinstance(rect, _VRectLike):
-            pass
-        # elif isinstance(rect, type["VRect"]):
+    def _collide_rect(self, rect: Rect | FRect) -> bool:
+        for x, y in (
+            rect.topleft,
+            rect.topright,
+            rect.bottomleft,
+            rect.bottomright,
+        ):
+            if self.collidepoint(x, y):
+                return True
+        return False
+    
+    def _collide_vrect(self, vrect: VRect) -> bool:
+        for x, y in vrect.points:
+            if self.collidepoint(x, y):
+                return True
+        return False
 
+    def colliderect(self, rect: VRect | Rect | FRect | RectValue) -> bool:
+        if isinstance(rect, Rect | FRect):
+            return self._collide_rect(rect)
+        elif isinstance(rect, Sequence) and len(rect) == 4:
+            return self._collide_rect(Rect(*rect))
+        elif isinstance(rect, VRect):
+            return self._collide_vrect(rect)
+        elif isinstance(rect, Sequence) and len(rect) == 5:
+            return self._collide_vrect(VRect(*rect))
         else:
             raise TypeError("Invalid rect, 4 or 5 fields must be numeric")
 
@@ -241,3 +246,9 @@ class VRect:
                 (self.x + self.h * _cos(self.a), self.y + self.h * _sin(self.a)),
                 1,
             )
+
+
+if __name__ == "__main__":
+    vrect1 = VRect(1, 1, 1, 1, 1)
+    vrect2 = VRect(1, 1, 1, 1, 1)
+    vrect1.colliderect((1, 1, 1, 1))
