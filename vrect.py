@@ -203,7 +203,7 @@ class VRect:
             if self.collidepoint(x, y):
                 return True
         return False
-    
+
     def _collide_vrect(self, vrect: VRect) -> bool:
         for x, y in vrect.points:
             if self.collidepoint(x, y):
@@ -221,6 +221,12 @@ class VRect:
             return self._collide_vrect(VRect(*rect))
         else:
             raise TypeError("Invalid rect, 4 or 5 fields must be numeric")
+
+    def colliderects(self, rects: Sequence[VRect | Rect | FRect | RectValue]) -> bool:
+        for rect in rects:
+            if self.colliderect(rect):
+                return True
+        return False
 
     def draw(
         self,
